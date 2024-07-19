@@ -3,6 +3,7 @@
 
 -- INPUT_CONSTS
 local FILE_NAME = "position.txt"
+local FILE_NAME_CSV = "position.csv"
 -- MATH_CONSTS
 local TIME_IN_ONE_DAY = 86400
 local RAD_TO_DEG = 180 / math.pi
@@ -180,21 +181,26 @@ function logging_wrapper(DATE, mil, Land_or_sky)
     local AS = ahrs:airspeed_estimate()
     local GPS_GS = gps:ground_speed(0)
     logging(DATE, mil, crnt_location, home_location, yaw, pitch, AS, GPS_GS, Land_or_sky)
+    logging_csv(DATE, mil, crnt_location, home_location, yaw, pitch, AS, GPS_GS, Land_or_sky)
 end
 
 -- Запись логов в position.txt на sd карте
 function logging(DATE, TIME_MS, POS, POS_HOME, YAW, PITCH, AIR_SPEED, GROUND_SPEED, SKY_OR_LAND)
+    -- открываем файл и проверяем, нет ли ошибок
     local file = io.open(FILE_NAME, "a")
     if not (file) then
         while (not (io.open(FILE_NAME, "a"))) do
-            GCS_Wrapper(ERROR, "file does not open") -- STILL IN WORK, DO OTHER WAY TO LOG
+            GCS_Wrapper(ERROR, "file does not open")
         end
     end
+
+    -- 2 Варианта: аппарат сбросил груз в воздухе или мы проверяем позицию груза в месте падения 
     if (SKY_OR_LAND == 0) then
         file:write("DROPPING POSITION - SKY -----------------------------------------------------------------------\n")
     else
         file:write("DROPPING POSITION - LAND ----------------------------------------------------------------------\n")
     end
+    
     file:write("Time: ")
     -- обновить время с GPS для записи в логи
     updateDate(DATE, TIME_MS)
@@ -224,4 +230,43 @@ function logging(DATE, TIME_MS, POS, POS_HOME, YAW, PITCH, AIR_SPEED, GROUND_SPE
     infoCheck(file, GROUND_SPEED, GROUND_SPEED .. "\n")
 
     file:write("END OF DROPPING POSITION----------------------------------------------------------------\n")
+end
+
+-- Запись логов в position.csv на sd карте
+function logging_csv(DATE, TIME_MS, POS, POS_HOME, YAW, PITCH, AIR_SPEED, GROUND_SPEED, SKY_OR_LAND)
+    -- открываем файл и проверяем, нет ли ошибок
+    local file = io.open(FILE_NAME_CSV, "a")
+    if not (file) then
+        while (not (io.open(FILE_NAME_CSV, "a"))) do
+            GCS_Wrapper(ERROR, "file does not open")
+        end
+    end
+    
+    -- обновить время с GPS для записи в логи
+    updateDate(DATE, TIME_MS)
+    local time = DATE.Day .. ":" .. DATE.Month .. ":" .. DATE.Year .. " " .. DATE.Hour .. ":" .. DATE.Minute .. ":" .. DATE.Second .. ":" .. DATE.MS .. ";"
+    infoCheck(file, DATE, time)
+
+    -- 2 Варианта: аппарат сбросил груз в воздухе или мы проверяем позицию груза в месте падения 
+    if (SKY_OR_LAND == 0) then
+        file:write("SKY;")
+    else
+        file:write("LAND;")
+    end
+
+    infoCheck(file, POS, POS:lat() / MULTIPLIER_LAT_LNG .. ";")
+
+    infoCheck(file, POS, POS:lng() / MULTIPLIER_LAT_LNG .. ";")
+
+    if (POS_HOME) then
+        infoCheck(file, POS, (POS:alt() - POS_HOME:alt()) * CM_TO_M .. ";")
+    end
+
+    infoCheck(file, YAW, YAW * RAD_TO_DEG .. ";")
+
+    infoCheck(file, PITCH, PITCH * RAD_TO_DEG .. ";")
+
+    infoCheck(file, AIR_SPEED, AIR_SPEED .. ";")
+
+    infoCheck(file, GROUND_SPEED, GROUND_SPEED .. "\n")
 end
