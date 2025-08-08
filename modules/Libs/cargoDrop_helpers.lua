@@ -23,31 +23,25 @@ function Setup_LAND(RC_FUNCTIONS)
 end
 
 -- функция для подключения по RC и определения сервомоторов для сброса в воздухе
-function Setup(RC_FUNCTIONS, SERVO_FUNCTIONS_1, SERVO_FUNCTIONS_2)
-    local RC_INPUT = rc:find_channel_for_option(RC_FUNCTIONS)
+function Setup(RC_FUNCTIONS, RC_CARGO)
+    local RC_INPUT_n = rc:find_channel_for_option(RC_FUNCTIONS)
+    local RC_CARGO_n = rc:find_channel_for_option(RC_CARGO)
 
-    local chan1 = SRV_Channels:find_channel(SERVO_FUNCTIONS_1)
-    local chan2 = SRV_Channels:find_channel(SERVO_FUNCTIONS_2)
 
-    if (not (RC_INPUT)) then
+    if (not (RC_INPUT_n)) then
         GCS_Wrapper(ALERT, "no RC connection with servos")
-        return Setup(RC_FUNCTIONS, SERVO_FUNCTIONS_1, SERVO_FUNCTIONS_2), 500
+        return Setup(RC_FUNCTIONS, RC_CARGO), 500
     end
     GCS_Wrapper(INFO, "RC connection established")
 
-    if (not (chan1)) then
-        GCS_Wrapper(ALERT, "Servo's channel1 is not found")
-        return Setup(RC_FUNCTIONS, SERVO_FUNCTIONS_1, SERVO_FUNCTIONS_2), 500
+    if (not (RC_CARGO_n)) then
+        GCS_Wrapper(ALERT, "no RC connection with servos")
+        return Setup(RC_FUNCTIONS, RC_CARGO), 500
     end
-    GCS_Wrapper(INFO, "Servo's channel1 is found")
 
-    if (not (chan2)) then
-        GCS_Wrapper(ALERT, "Servo's channel2 is not found")
-        return Setup(RC_FUNCTIONS, SERVO_FUNCTIONS_1, SERVO_FUNCTIONS_2), 500
-    end
-    GCS_Wrapper(INFO, "Servo's channel2 is found")
+    GCS_Wrapper(INFO, "RC2's connection is found")
 
-    return chan1, chan2, RC_INPUT
+    return RC_INPUT_n, RC_CARGO_n
 end
 
 -- ФУНКЦИИ ДЛЯ ОПРЕДЕЛЕНИЯ ВРЕМЕНИ============================================================================================================================
